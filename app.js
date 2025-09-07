@@ -181,7 +181,8 @@ function initIndex(){
   $("#regForm").addEventListener("submit", e=>{
     e.preventDefault();
     const name=$("#reg_name").value.trim();
-    const user=$("#reg_user").value.trim();
+    let user=$('#reg_user').value.trim();
+    user = user.replace(/\s+/g,'');
     const pass=$("#reg_pass").value;
     const el=$("#reg_msg");
     if(name.length<2 || user.length<3 || pass.length<6){ el.textContent="กรอกข้อมูลให้ครบ: ชื่อ ≥2, ผู้ใช้ ≥3, รหัสผ่าน ≥6"; el.style.color="var(--danger)"; return; }
