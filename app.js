@@ -15,7 +15,17 @@ const DB = {
     try{ return JSON.parse(localStorage.getItem(key) ?? JSON.stringify(fallback)); }
     catch(_){ return fallback; }
   },
-  write(key, val){ localStorage.setItem(key, JSON.stringify(val)); },
+  
+  write(key, val){
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e){
+      console.error('Storage error', e);
+      if (typeof toast==='function'){ toast('ไม่สามารถบันทึกข้อมูล: โปรดปิดโหมดไม่ระบุตัวตน/เพิ่มพื้นที่'); }
+      else { alert('ไม่สามารถบันทึกข้อมูลในเบราว์เซอร์ได้'); }
+      throw e;
+    }
+  },
 };
 
 const K = {
@@ -176,7 +186,7 @@ function initIndex(){
     const el=$("#reg_msg");
     if(name.length<2 || user.length<3 || pass.length<6){ el.textContent="กรอกข้อมูลให้ครบ: ชื่อ ≥2, ผู้ใช้ ≥3, รหัสผ่าน ≥6"; el.style.color="var(--danger)"; return; }
     const {ok,msg}=register(name,user,pass,'student');
-    if(!ok){ el.textContent=msg; el.style.color="var(--danger)"; return; }
+    if(!ok){ el.textContent = msg || 'สมัครไม่สำเร็จ'; el.style.color='var(--danger)'; return; }
     el.textContent="สมัครสำเร็จ ✓ กำลังพาไปยังหน้านักเรียน..."; el.style.color="var(--success)";
     setTimeout(()=> location.href="student.html", 300);
   });

@@ -36,28 +36,29 @@
 
       <div id="card-login">
         <form id="loginForm" class="grid cols-2">
-          <div class="input"><label>ชื่อผู้ใช้</label><input id="login_user" placeholder="Username"></div>
-          <div class="input"><label>รหัสผ่าน</label><input id="login_pass" type="password" placeholder="*****"></div>
+          <div class="input"><label>ชื่อผู้ใช้</label><input id="login_user" placeholder="student / teacher / admin"></div>
+          <div class="input"><label>รหัสผ่าน</label><input id="login_pass" type="password" placeholder="123456"></div>
           <div><button class="btn" style="width:100%;margin-top:8px">เข้าสู่ระบบ</button><div class="small" id="login_msg" style="margin-top:8px"></div></div>
-		  <div class="small">เวอร์ชั้นของแอพ: <span class="kbd">V.1.0.5</span>
-        </form>
+          <div class="small">เวอร์ชั้นของแอพ: <span class="kbd">V.1.0.6</span>
+		  </form>
       </div>
 
       <div id="card-register" class="hidden">
         <form id="regForm" class="grid cols-2">
-          <div class="input"><label>ชื่อ - นามสกุล</label><input id="reg_name" placeholder="เช่น นราธิป ใจดี"></div>
-          <div class="input"><label>ชื่อผู้ใช้</label><input id="reg_user" placeholder="เช่น poohhub_m4"></div>
-          <div class="input"><label>รหัสผ่าน</label><input id="reg_pass" type="password"></div>
+          <div class="input"><label>ชื่อ - นามสกุล</label><input id="reg_name" placeholder="เช่น นราธิป ใจดี" required></div>
+          <div class="input"><label>ชื่อผู้ใช้</label><input id="reg_user" placeholder="เช่น poohhub_m4" pattern="[^\s]{3,}" title="อย่างน้อย 3 ตัว และห้ามเป็นช่องว่างล้วน" required></div>
+          <div class="input"><label>รหัสผ่าน</label><input id="reg_pass" type="password" minlength="6" required></div>
           <div class="small" style="align-self:center">* สมัครด้วยตัวเองได้เฉพาะ <b>นักเรียน</b>. ถ้าเป็นครูให้ผู้ดูแลระบบสร้างบัญชีให้</div>
           <div><button class="btn success" style="width:100%;margin-top:8px">สมัครใช้งาน</button></div>
           <div class="small" id="reg_msg" style="align-self:center"></div>
+          <div class="small" id="storage_hint" style="grid-column:1/-1;color:#718096">หากสมัครไม่สำเร็จ: ตรวจสอบว่าเบราว์เซอร์ไม่อยู่ในโหมดไม่ระบุตัวตน และอนุญาตการเก็บข้อมูล (localStorage)</div>
         </form>
       </div>
     </div>
   </div>
 
   <div id="toast" class="card hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 16px;">ข้อความ</div>
-  <div class="footer">© 2025 Logic Lab • Thawee Koon</div>
+  <div class="footer">© 2025 Logic Lab • POOHHUB</div>
 
   <script src="app.js"></script>
   <script>TK.initIndex()</script>
