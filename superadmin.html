@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logic Lab — ผู้ดูแลระบบ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="brand"><div class="brand-logo"></div><div><span>Logic Lab</span><small>System Admin</small></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="small">สวัสดี, <b id="userName">Admin</b></span>
+      <button class="btn ghost" onclick="TK.signOut()">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <div class="container grid cols-2">
+    <div class="card">
+      <div class="section-title">สร้างบัญชีครู</div>
+      <form id="mkTeacher" class="grid cols-2">
+        <div class="input"><label>ชื่อ - นามสกุล</label><input id="t_name" placeholder="เช่น ครูสมศรี ใจดี"></div>
+        <div class="input"><label>ชื่อผู้ใช้</label><input id="t_user" placeholder="เช่น teacher_cmu"></div>
+        <div class="input"><label>รหัสผ่าน</label><input id="t_pass" type="password" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
+        <div><button class="btn success" style="width:100%;margin-top:8px">สร้างบัญชีครู</button></div>
+      </form>
+      <div class="small" id="mk_msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">หมายเหตุ</div>
+      <ul>
+        <li>บัญชีครูสร้างได้เฉพาะที่นี่โดยผู้ดูแลระบบเท่านั้น</li>
+        <li>เข้าสู่ระบบด้วย admin: <span class="kbd">admin / 123456</span> (เริ่มต้น)</li>
+        <li>คุณครูใช้ <span class="kbd">admin.html</span> เป็นแดชบอร์ด</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="toast" class="card hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 16px;">ข้อความ</div>
+  <script src="app.js"></script>
+  <script>TK.initSuperadmin()</script>
+</body>
+</html>

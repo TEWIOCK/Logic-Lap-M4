@@ -12,23 +12,20 @@
       <div class="brand-logo"></div>
       <div><span>Logic Lab</span><small>เกมตรรกะสำหรับ ม.4 | M.4 Logic Game</small></div>
     </div>
+    
   </div>
 
   <div class="container">
     <div class="hero">
       <div>
         <h1>เริ่มต้นเรียนตรรกศาสตร์อย่างสนุก 🎯</h1>
-        <p>แอพเว็บแนวการ์ดสวยๆ สำหรับนักเรียน ม.4 พึ่งเริ่มเรียน มีระบบสมัคร/เข้าสู่ระบบ เลือกห้องเรียน และแดชบอร์ดคุณครู</p>
-        <div style="display:flex; gap:10px">
+        <p>แอพเว็บแนวสวยสำหรับนักเรียน ม.4 มีสมัคร/เข้าสู่ระบบ เลือกห้องเรียน แดชบอร์ดครู และผู้ดูแลระบบ</p>
+        <div style="display:flex;gap:10px">
           <a class="btn" href="#auth">เข้าสู่ระบบ</a>
           <a class="btn accent" href="#auth" onclick="document.getElementById('tab-register').click()">สมัครใช้งาน</a>
         </div>
       </div>
-      <div class="hero-ill">
-        <div class="chip">AND</div>
-        <div class="chip">OR</div>
-        <div class="chip">NOT</div>
-      </div>
+      <div class="hero-ill"><div class="chip">AND</div><div class="chip">OR</div><div class="chip">NOT</div></div>
     </div>
 
     <div class="card" id="auth">
@@ -39,34 +36,19 @@
 
       <div id="card-login">
         <form id="loginForm" class="grid cols-2">
-          <div class="input">
-            <label>ชื่อผู้ใช้ / Username</label>
-            <input id="login_user" placeholder="เช่น student หรือ teacher">
-          </div>
-          <div class="input">
-            <label>รหัสผ่าน / Password</label>
-            <input id="login_pass" type="password" placeholder="อย่างน้อย 6 ตัวอักษร">
-          </div>
-          <div>
-            <button class="btn" style="width:100%; margin-top:8px">เข้าสู่ระบบ</button>
-            <div class="small" id="login_msg" style="margin-top:8px"></div>
-          </div>
-          
+          <div class="input"><label>ชื่อผู้ใช้</label><input id="login_user" placeholder="student / teacher / admin"></div>
+          <div class="input"><label>รหัสผ่าน</label><input id="login_pass" type="password" placeholder="123456"></div>
+          <div><button class="btn" style="width:100%;margin-top:8px">เข้าสู่ระบบ</button><div class="small" id="login_msg" style="margin-top:8px"></div></div>
         </form>
       </div>
 
       <div id="card-register" class="hidden">
         <form id="regForm" class="grid cols-2">
           <div class="input"><label>ชื่อ - นามสกุล</label><input id="reg_name" placeholder="เช่น นราธิป ใจดี"></div>
-          <div class="input"><label>ชื่อผู้ใช้ (ไม่ซ้ำ)</label><input id="reg_user" placeholder="เช่น poohhub_m4"></div>
+          <div class="input"><label>ชื่อผู้ใช้</label><input id="reg_user" placeholder="เช่น poohhub_m4"></div>
           <div class="input"><label>รหัสผ่าน</label><input id="reg_pass" type="password"></div>
-          <div class="input"><label>บทบาท</label>
-            <select id="reg_role">
-              <option value="student">นักเรียน / Student</option>
-              <option value="teacher">คุณครู / Teacher</option>
-            </select>
-          </div>
-          <div><button class="btn success" style="width:100%; margin-top:8px">สมัครใช้งาน</button></div>
+          <div class="small" style="align-self:center">* สมัครด้วยตัวเองได้เฉพาะ <b>นักเรียน</b>. ถ้าเป็นครูให้ผู้ดูแลระบบสร้างบัญชีให้</div>
+          <div><button class="btn success" style="width:100%;margin-top:8px">สมัครใช้งาน</button></div>
           <div class="small" id="reg_msg" style="align-self:center"></div>
         </form>
       </div>
