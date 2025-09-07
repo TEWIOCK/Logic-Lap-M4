@@ -1,6 +1,7 @@
 
 /* Thawee Koon: Logic App (M.4) — Pure JS + localStorage
  * Works on GitHub Pages (no backend). Demo-grade authentication.
+ * v2: single-class enrollment, leave/kick with score wipe, attempts carry classId
  */
 
 const $ = (q, ctx=document)=>ctx.querySelector(q);
@@ -97,7 +98,6 @@ function requireAuth(role=null){
   const sess = currentSession();
   if(!sess){ location.href="index.html"; return; }
   if(role && sess.role !== role){
-    // redirect to proper page
     location.href = (sess.role === "teacher") ? "admin.html" : "student.html";
   }
   return sess;
@@ -124,35 +124,63 @@ function register(name, username, password, role){
   return {ok:true};
 }
 
+// ---------- Classes & Enrollments ----------
 function classesByTeacher(teacherId){
   const classes = DB.read(K.classes, []);
   return classes.filter(c => c.teacherId === teacherId);
 }
-function enroll(studentId, classId){
-  const enrolls = DB.read(K.enrolls, []);
-  if(!enrolls.some(e => e.studentId===studentId && e.classId===classId)){
-    enrolls.push({classId, studentId});
-    DB.write(K.enrolls, enrolls);
-  }
-}
+function getEnrollments(){ return DB.read(K.enrolls, []); }
+function setEnrollments(list){ DB.write(K.enrolls, list); }
+
 function myClasses(studentId){
-  const enrolls = DB.read(K.enrolls, []);
+  const enrolls = getEnrollments();
   const classes = DB.read(K.classes, []);
   const ids = enrolls.filter(e=>e.studentId===studentId).map(e=>e.classId);
   return classes.filter(c => ids.includes(c.id));
 }
 
-// Quiz engine
+// Single-class enforce
+function enroll(studentId, classId){
+  const has = myClasses(studentId);
+  if(has.length > 0){
+    return {ok:false, msg:"เข้าร่วมได้ทีละ 1 ห้อง — กรุณาออกจากห้องเดิมก่อน"};
+  }
+  const enrolls = getEnrollments();
+  enrolls.push({classId, studentId});
+  setEnrollments(enrolls);
+  return {ok:true};
+}
+
+function unenroll(studentId, classId, wipe=true){
+  const enrolls = getEnrollments().filter(e=> !(e.studentId===studentId && e.classId===classId));
+  setEnrollments(enrolls);
+  if(wipe){ deleteAttemptsFor(studentId, classId); }
+}
+
+// ---------- Attempts / Quiz ----------
 function getPuzzles(){ return DB.read(K.puzzles, []); }
-function saveAttempt({userId, puzzleId, correct}){
-  const attempts = DB.read(K.attempts, []);
-  attempts.push({id:uid("a"), userId, puzzleId, correct, ts:Date.now()});
-  DB.write(K.attempts, attempts);
+function getAttempts(){ return DB.read(K.attempts, []); }
+function setAttempts(list){ DB.write(K.attempts, list); }
+
+function saveAttempt({userId, puzzleId, classId, correct}){
+  const attempts = getAttempts();
+  attempts.push({id:uid("a"), userId, puzzleId, classId, correct, ts:Date.now()});
+  setAttempts(attempts);
+}
+
+function deleteAttemptsFor(userId, classId=null){
+  let attempts = getAttempts();
+  attempts = attempts.filter(a => {
+    if(a.userId !== userId) return true;
+    if(classId===null) return false; // delete all of this user
+    return a.classId !== classId;    // delete only for this class
+  });
+  setAttempts(attempts);
 }
 
 function percent(n, d){ return d===0 ? 0 : Math.round((n/d)*100); }
 
-// Page initializers
+// ---------- Index ----------
 function initIndex(){
   seed();
   const tabLogin = $("#tab-login"), tabReg = $("#tab-register");
@@ -198,11 +226,11 @@ function initIndex(){
   });
 }
 
+// ---------- Student ----------
 function initStudent(){
   const sess = requireAuth("student"); if(!sess) return;
   $("#userName").textContent = sess.name;
 
-  // Load classes
   const list = $("#classList");
   const classes = DB.read(K.classes, []);
   list.innerHTML = "";
@@ -227,8 +255,27 @@ function initStudent(){
   list.addEventListener("click", (e)=>{
     const joinId = e.target.getAttribute("data-join");
     const playId = e.target.getAttribute("data-play");
-    if(joinId){ enroll(sess.id, joinId); toast("เข้าร่วมห้องเรียนแล้ว ✓"); renderMyClasses(); }
-    if(playId){ openQuizModal(playId); }
+    const my = myClasses(sess.id);
+    const myId = my[0]?.id;
+    if(joinId){
+      if(myId && myId !== joinId){
+        toast("เข้าร่วมได้ทีละ 1 ห้อง — กรุณาออกจากห้องเดิมก่อน");
+        return;
+      }
+      if(myId === joinId){
+        toast("คุณอยู่ในห้องนี้แล้ว");
+        return;
+      }
+      const res = enroll(sess.id, joinId);
+      if(!res.ok){ toast(res.msg); return; }
+      toast("เข้าร่วมห้องเรียนแล้ว ✓");
+      renderMyClasses(); 
+    }
+    if(playId){
+      const enrolled = myClasses(sess.id).some(c=>c.id===playId);
+      if(!enrolled){ toast("กรุณาเข้าร่วมห้องก่อน"); return; }
+      openQuizModal(playId);
+    }
   });
 
   renderMyClasses();
@@ -241,17 +288,29 @@ function renderMyClasses(){
   const sess = currentSession();
   const wrap = $("#myClasses");
   const my = myClasses(sess.id);
-  wrap.innerHTML = my.map(c=>`<span class="badge">🏫 ${c.name}</span>`).join(" ") || `<span class="small">ยังไม่ได้เข้าร่วมห้อง</span>`;
+  if(my.length === 0){
+    wrap.innerHTML = `<span class="small">ยังไม่ได้เข้าร่วมห้อง</span>`;
+  }else{
+    const c = my[0];
+    wrap.innerHTML = `<span class="badge">🏫 ${c.name}</span> <button class="btn danger" id="leaveBtn">ออกจากห้อง</button>`;
+    $("#leaveBtn").onclick = ()=>{
+      if(confirm("ยืนยันออกจากห้องนี้หรือไม่? คะแนนทั้งหมดจะถูกลบถาวร")) {
+        unenroll(sess.id, c.id, true);
+        toast("ออกจากห้องและลบคะแนนแล้ว");
+        renderMyClasses(); renderStats();
+      }
+    };
+  }
 }
 
 function renderStats(){
   const sess = currentSession();
-  const attempts = DB.read(K.attempts, []).filter(a=>a.userId===sess.id);
-  const puzzles = DB.read(K.puzzles, []);
+  const attempts = getAttempts().filter(a=>a.userId===sess.id);
   const correct = attempts.filter(a=>a.correct).length;
   $("#statAll").textContent = `${attempts.length}`;
   $("#statCorrect").textContent = `${correct}`;
   $("#statRate").textContent = `${percent(correct, attempts.length)}%`;
+  const puzzles = getPuzzles();
   $("#recentList").innerHTML = attempts.slice(-5).reverse().map(a=>{
     const p = puzzles.find(x=>x.id===a.puzzleId);
     const icon = a.correct ? "✅" : "❌";
@@ -268,7 +327,7 @@ function openQuizModal(classId){
 
   function render(){
     const p = puzzles[idx];
-    if(!p){ // end
+    if(!p){
       content.innerHTML = `
         <div class="card">
           <div class="section-title">สรุปผล</div>
@@ -292,7 +351,7 @@ function openQuizModal(classId){
       b.textContent = opt;
       b.onclick = ()=>{
         const correct = (opt===p.answer);
-        saveAttempt({userId: currentSession().id, puzzleId: p.id, correct});
+        saveAttempt({userId: currentSession().id, puzzleId: p.id, classId, correct});
         if(correct){ toast("ถูกต้อง! ✓"); score++; }
         else { toast("ยังไม่ถูก ลองใหม่ในข้อถัดไป"); }
         idx++; render();
@@ -374,14 +433,34 @@ function initAdmin(){
     body.innerHTML = `
       <div class="section-title">สมาชิกห้อง</div>
       <table class="table">
-        <thead><tr><th>ชื่อ</th><th>ผู้ใช้</th><th>บทบาท</th></tr></thead>
+        <thead><tr><th>ชื่อ</th><th>ผู้ใช้</th><th>บทบาท</th><th>การจัดการ</th></tr></thead>
         <tbody>
-          ${studs.map(s=>`<tr><td>${s.name}</td><td>${s.username}</td><td>${s.role}</td></tr>`).join("") || `<tr><td colspan="3">ยังไม่มีนักเรียนเข้าร่วม</td></tr>`}
+          ${
+            studs.map(s=>`
+              <tr>
+                <td>${s.name}</td>
+                <td>${s.username}</td>
+                <td>${s.role}</td>
+                <td><button class="btn danger" data-kick="${s.id}|${classId}">ถอดออก</button></td>
+              </tr>`).join("") || `<tr><td colspan="4">ยังไม่มีนักเรียนเข้าร่วม</td></tr>`
+          }
         </tbody>
       </table>
       <div style="text-align:right"><button class="btn" id="amClose">ปิด</button></div>
     `;
     $("#amClose").onclick = ()=> modal.classList.add("hidden");
+
+    body.addEventListener("click", (e)=>{
+      const pair = e.target.getAttribute("data-kick");
+      if(pair){
+        const [stuId, clsId] = pair.split("|");
+        if(confirm("ยืนยันถอดนักเรียนออกจากห้องนี้? คะแนนของนักเรียนในห้องนี้จะถูกลบ")) {
+          unenroll(stuId, clsId, true);
+          toast("ถอดนักเรียนและลบคะแนนแล้ว");
+          openMembers(classId); // re-render
+        }
+      }
+    }, {once:false});
   }
 
   function openAssign(classId){
