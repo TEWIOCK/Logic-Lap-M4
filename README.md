@@ -3,7 +3,6 @@
 
 - Pure HTML/CSS/JS. No backend, works on GitHub Pages.
 - Features: Register/Login (localStorage), class selection, student dashboard, teacher admin (create classes, add puzzles), simple quiz engine.
-- Demo accounts: `student / 123456`, `teacher / 123456`
 
 ## How to deploy on GitHub Pages
 1. Create a new repo and upload all files in this folder.
