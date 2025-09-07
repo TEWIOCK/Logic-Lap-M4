@@ -52,7 +52,24 @@
         <div><button class="btn">เพิ่มโจทย์</button></div>
       </form>
       <p class="small">* ในเดโมนี้ แบบฝึกจะเป็นชุดเดียวสำหรับทุกห้อง</p>
+    
+    <div class="card">
+      <div class="section-title">🏆 กระดานคะแนน & ส่งออกเกรด</div>
+<button class="btn danger" id="btnResetAllScores" onclick="resetAllScores()" style="margin-bottom:12px">รีเซ็ตคะแนนทั้งหมด</button>
+      <div class="grid cols-2">
+        <div class="input">
+          <label>เลือกห้อง</label>
+          <select id="lbClassSelect"></select>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:8px">
+          <button class="btn" id="btnExportClass">Export คะแนนห้อง (CSV)</button>
+          <button class="btn accent" id="btnExportAll">Export ทั้งระดับชั้น (CSV)</button>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+      <div id="lbAdminTable"></div>
     </div>
+    
   </div>
 
   <!-- Modal -->
@@ -65,5 +82,16 @@
   <div id="toast" class="card hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 16px;">ข้อความ</div>
   <script src="app.js"></script>
   <script>TK.initAdmin()</script>
+
+  <script>
+  function renderGlobalBoard(){
+    const data = TK.leaderboardAll();
+    const wrap = document.getElementById("leaderboardGlobal");
+    wrap.innerHTML = `<table class="table"><thead><tr><th>อันดับ</th><th>ชื่อ</th><th>คะแนน</th></tr></thead><tbody>`+
+      data.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.score}</td></tr>`).join("")+
+      `</tbody></table><button class="btn success" onclick="TK.exportLeaderboardCSV()">ส่งออก CSV</button>`;
+  }
+  </script>
+    
 </body>
 </html>

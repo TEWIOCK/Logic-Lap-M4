@@ -494,4 +494,217 @@ function initAdmin(){
 }
 
 // Expose init functions
-window.TK = { initIndex, initStudent, initAdmin, signOut };
+
+// ---------- Leaderboards ----------
+function leaderboardAll(){
+  const users = DB.read(K.users, []);
+  const attempts = getAttempts();
+  const scores = {};
+  attempts.forEach(a=>{
+    if(a.correct){
+      scores[a.userId] = (scores[a.userId]||0)+1;
+    }
+  });
+  const arr = Object.entries(scores).map(([uid,score])=>{
+    const u = users.find(x=>x.id===uid);
+    return {id:uid, name:u?.name||"?", score};
+  });
+  return arr.sort((a,b)=>b.score-a.score);
+}
+function leaderboardClass(classId){
+  const users = DB.read(K.users, []);
+  const attempts = getAttempts().filter(a=>a.classId===classId);
+  const scores = {};
+  attempts.forEach(a=>{
+    if(a.correct){
+      scores[a.userId] = (scores[a.userId]||0)+1;
+    }
+  });
+  const arr = Object.entries(scores).map(([uid,score])=>{
+    const u = users.find(x=>x.id===uid);
+    return {id:uid, name:u?.name||"?", score};
+  });
+  return arr.sort((a,b)=>b.score-a.score);
+}
+function exportLeaderboardCSV(classId=null){
+  const rows = [["Name","Score"]];
+  const data = classId? leaderboardClass(classId):leaderboardAll();
+  data.forEach(r=> rows.push([r.name, r.score]));
+  const csv = rows.map(r=>r.join(",")).join("\\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = classId? "leaderboard_class.csv":"leaderboard_all.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
+// ---------- Leaderboards & Grading (NEW) ----------
+function getUsers(){ return DB.read(K.users, []); }
+
+function attemptsBy(filterFn){
+  return getAttempts().filter(filterFn || (()=>true));
+}
+
+function scoreSummary(userId, classId=null){
+  const attempts = attemptsBy(a => a.userId===userId && (classId? a.classId===classId : true));
+  const total = attempts.length;
+  const correct = attempts.filter(a=>a.correct).length;
+  const acc = percent(correct, total);
+  return {total, correct, acc};
+}
+
+function leaderboardOverall(limit=10){
+  const users = getUsers().filter(u=>u.role==="student");
+  const rows = users.map(u=>{
+    const s = scoreSummary(u.id, null);
+    return {user:u, ...s};
+  }).sort((a,b)=> b.correct - a.correct || b.acc - a.acc);
+  return rows.slice(0, limit);
+}
+
+function leaderboardForClass(classId, limit=10){
+  const users = getUsers().filter(u=>u.role==="student");
+  const studs = getEnrollments().filter(e=>e.classId===classId).map(e=>e.studentId);
+  const rows = users.filter(u=>studs.includes(u.id)).map(u=>{
+    const s = scoreSummary(u.id, classId);
+    return {user:u, ...s};
+  }).sort((a,b)=> b.correct - a.correct || b.acc - a.acc);
+  return rows.slice(0, limit);
+}
+
+// CSV helpers
+function toCSV(rows, header){
+  const escape = (v)=> `"${String(v??'').replace(/"/g,'""')}"`;
+  return [header.map(escape).join(","), ...rows.map(r=> header.map(h=>escape(r[h])).join(","))].join("\n");
+}
+
+function exportCsvForClass(classId){
+  const cls = DB.read(K.classes, []).find(c=>c.id===classId);
+  const rows = leaderboardForClass(classId, 9999).map((r,i)=>({
+    rank: i+1,
+    name: r.user.name,
+    username: r.user.username,
+    class: cls?.name || "",
+    correct: r.correct,
+    total: r.total,
+    accuracy_percent: r.acc
+  }));
+  const csv = toCSV(rows, ["rank","name","username","class","correct","total","accuracy_percent"]);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `scores_${(cls?.code||'class')}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportCsvAll(){
+  // Aggregate overall per-student
+  const users = getUsers().filter(u=>u.role==="student");
+  const rows = users.map((u,i)=>{
+    const s = scoreSummary(u.id, null);
+    return {
+      rank: 0, // will fill after sort
+      name: u.name,
+      username: u.username,
+      correct: s.correct,
+      total: s.total,
+      accuracy_percent: s.acc
+    };
+  }).sort((a,b)=> b.correct - a.correct || b.accuracy_percent - a.accuracy_percent)
+    .map((r,i)=> ({...r, rank:i+1}));
+  const csv = toCSV(rows, ["rank","name","username","correct","total","accuracy_percent"]);
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `scores_all_M4.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- Render on Student page ----
+function renderStudentLeaderboards(){
+  const sess = currentSession();
+  // Overall M.4
+  const topAll = leaderboardOverall(10);
+  $("#lbAll").innerHTML = topAll.length? `
+    <table class="table"><thead>
+      <tr><th>#</th><th>ชื่อ</th><th>ถูก</th><th>ทั้งหมด</th><th>%</th></tr>
+    </thead><tbody>
+      ${topAll.map((r,i)=>`<tr><td>${i+1}</td><td>${r.user.name}</td><td>${r.correct}</td><td>${r.total}</td><td>${r.acc}%</td></tr>`).join("")}
+    </tbody></table>` : `<div class="small">ยังไม่มีข้อมูล</div>`;
+
+  // My class
+  const my = myClasses(sess.id);
+  if(my.length){
+    const cid = my[0].id;
+    const topC = leaderboardForClass(cid, 10);
+    $("#lbClassTitle").textContent = my[0].name;
+    $("#lbClass").innerHTML = topC.length? `
+      <table class="table"><thead>
+        <tr><th>#</th><th>ชื่อ</th><th>ถูก</th><th>ทั้งหมด</th><th>%</th></tr>
+      </thead><tbody>
+        ${topC.map((r,i)=>`<tr><td>${i+1}</td><td>${r.user.name}</td><td>${r.correct}</td><td>${r.total}</td><td>${r.acc}%</td></tr>`).join("")}
+      </tbody></table>` : `<div class="small">ยังไม่มีข้อมูล</div>`;
+  }else{
+    $("#lbClassTitle").textContent = "—";
+    $("#lbClass").innerHTML = `<div class="small">ยังไม่ได้เข้าร่วมห้อง</div>`;
+  }
+}
+
+// Extend initStudent to render leaderboards after other renders
+const _initStudent_old = initStudent;
+initStudent = function(){
+  _initStudent_old();
+  renderStudentLeaderboards();
+};
+
+// ---- Render on Admin page ----
+function renderAdminLeaderboard(){
+  const sess = currentSession();
+  const myClassesList = classesByTeacher(sess.id);
+  const sel = $("#lbClassSelect");
+  if(sel){
+    sel.innerHTML = myClassesList.map(c=>`<option value="${c.id}">${c.name} (${c.code})</option>`).join("") || `<option value="">— ไม่มีห้อง —</option>`;
+    if(myClassesList.length){
+      updateAdminLeaderboardTable(myClassesList[0].id);
+      sel.onchange = ()=> updateAdminLeaderboardTable(sel.value);
+      $("#btnExportClass").onclick = ()=> exportCsvForClass(sel.value);
+    }
+  }
+  $("#btnExportAll").onclick = exportCsvAll;
+}
+
+function updateAdminLeaderboardTable(classId){
+  const rows = leaderboardForClass(classId, 100);
+  $("#lbAdminTable").innerHTML = rows.length? `
+    <table class="table"><thead>
+      <tr><th>#</th><th>ชื่อ</th><th>ผู้ใช้</th><th>ถูก</th><th>ทั้งหมด</th><th>%</th></tr>
+    </thead><tbody>
+      ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.user.name}</td><td>${r.user.username}</td><td>${r.correct}</td><td>${r.total}</td><td>${r.acc}%</td></tr>`).join("")}
+    </tbody></table>` : `<div class="small">ยังไม่มีข้อมูล</div>`;
+}
+
+// Extend initAdmin
+const _initAdmin_old = initAdmin;
+initAdmin = function(){
+  _initAdmin_old();
+  renderAdminLeaderboard();
+  const btnR = document.getElementById('btnResetAll'); if(btnR){ btnR.onclick = resetAllScores; }
+};
+
+
+// ---------- Reset Scores (NEW) ----------
+function resetAllScores(){
+  if(confirm("ยืนยันรีเซ็ตคะแนนทั้งหมดของนักเรียนทุกคนหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")){
+    setAttempts([]);
+    toast("รีเซ็ตคะแนนทั้งหมดแล้ว");
+    renderAdminLeaderboard();
+  const btnR = document.getElementById('btnResetAll'); if(btnR){ btnR.onclick = resetAllScores; }
+  }
+}
+
+window.TK = { initIndex, initStudent, initAdmin, signOut, resetAllScores };
