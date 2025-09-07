@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logic Lab — คุณครู</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="brand"><div class="brand-logo"></div><div><span>Logic Lab</span><small>Teacher Admin</small></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="small">ยินดีต้อนรับ, <b id="userName">---</b></span>
+      <button class="btn ghost" id="logoutBtn">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <div class="container grid cols-2">
+    <div class="card">
+      <div class="section-title">สร้างห้องเรียนใหม่</div>
+      <form id="newClassForm" class="grid cols-2">
+        <div class="input"><label>ชื่อห้อง (เช่น ม.4/3)</label><input id="cls_name" placeholder="ม.4/3"></div>
+        <div class="input"><label>รหัสห้อง (ถ้าเว้นว่าง ระบบจะสุ่ม)</label><input id="cls_code" placeholder="M43"></div>
+        <div><button class="btn success" style="width:100%;margin-top:8px">สร้างห้อง</button></div>
+      </form>
+      <div style="height:8px"></div>
+      <table class="table" id="classTable">
+        <thead><tr><th>ชื่อห้อง</th><th>รหัส</th><th>การจัดการ</th></tr></thead>
+        <tbody id="classTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="section-title">เพิ่มโจทย์/แบบฝึก (อย่างง่าย)</div>
+      <form id="pzForm" class="grid">
+        <div class="input"><label>ชื่อโจทย์</label><input id="pz_title" placeholder="เช่น ความสัมพันธ์ของเงื่อนไข"></div>
+        <div class="input"><label>คำถาม</label><textarea id="pz_stem" rows="3" placeholder="พิมพ์คำถาม"></textarea></div>
+        <div class="input"><label>ตัวเลือก (คั่นด้วย | )</label><input id="pz_opts" placeholder="เช่น ถูก | ผิด"></div>
+        <div class="grid cols-2">
+          <div class="input"><label>คำตอบที่ถูก</label><input id="pz_ans" placeholder="ให้พิมพ์ตรงกับตัวเลือก"></div>
+          <div class="input"><label>ระดับ</label>
+            <select id="pz_level"><option>เริ่มต้น</option><option>ปานกลาง</option><option>ท้าทาย</option></select>
+          </div>
+        </div>
+        <div><button class="btn">เพิ่มโจทย์</button></div>
+      </form>
+      <p class="small">* เดโมนี้ แบบฝึกเป็นชุดเดียวสำหรับทุกห้อง</p>
+      <div style="height:8px"></div>
+      <div class="section-title">รายการโจทย์</div>
+      <div id="pzList"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🏆 กระดานคะแนน & ส่งออกเกรด</div>
+      <div class="grid cols-2">
+        <div class="input"><label>เลือกห้อง</label><select id="lbClassSelect"></select></div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button class="btn" id="btnExportClass">Export คะแนนห้อง (CSV)</button>
+          <button class="btn accent" id="btnExportAll">Export ทั้งระดับชั้น (CSV)</button>
+          <button class="btn danger" id="btnResetAll" title="ลบคะแนนนักเรียนทั้งหมด">รีเซ็ตคะแนนทั้งหมด</button>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+      <div id="lbAdminTable"></div>
+    </div>
+  </div>
+
+  <div id="adminModal" class="hidden" style="position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.2)">
+    <div class="container" style="max-width:720px"><div class="card" id="adminModalBody"></div></div>
+  </div>
+
+  <div id="toast" class="card hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 16px;">ข้อความ</div>
+  <script src="app.js"></script>
+  <script>TK.initAdmin()</script>
+</body>
+</html>

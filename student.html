@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logic Lab — นักเรียน</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="brand"><div class="brand-logo"></div><div><span>Logic Lab</span><small>Student Dashboard</small></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="badge" id="myClasses"></span>
+      <span class="small">สวัสดี, <b id="userName">---</b></span>
+      <button class="btn ghost" id="logoutBtn">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <div class="container grid cols-2">
+    <div class="card">
+      <div class="section-title">เลือกห้องเรียนที่มี</div>
+      <div id="classList" class="grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">สถิติของฉัน</div>
+      <div class="grid cols-3">
+        <div class="card">ทำแบบฝึกทั้งหมด<div style="font-size:32px;font-weight:900" id="statAll">0</div></div>
+        <div class="card">ถูกต้อง<div style="font-size:32px;font-weight:900;color:var(--success)" id="statCorrect">0</div></div>
+        <div class="card">อัตราความถูกต้อง<div style="font-size:32px;font-weight:900" id="statRate">0%</div></div>
+      </div>
+      <div style="height:8px"></div>
+      <div class="section-title">ทำล่าสุด</div>
+      <div id="recentList" class="grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🏆 กระดานคะแนน ระดับ ม.4 (Top 10)</div>
+      <div id="lbAll"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🥇 กระดานคะแนนห้อง: <span id="lbClassTitle">—</span> (Top 10)</div>
+      <div id="lbClass"></div>
+    </div>
+  </div>
+
+  <div id="quizModal" class="hidden" style="position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.2)">
+    <div class="container" style="max-width:720px">
+      <div id="quizContent"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="card hidden" style="position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:12px 16px;">ข้อความ</div>
+  <script src="app.js"></script>
+  <script>TK.initStudent()</script>
+</body>
+</html>
